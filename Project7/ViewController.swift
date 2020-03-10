@@ -37,14 +37,17 @@ class ViewController: UITableViewController {
         }
         //        if let will check if the URL is valid as opposed to force unwrapping it.
         
-        if let url = URL(string: urlString) {
-            if let data = try? Data(contentsOf: url){
-                //        Contents of creates a new Data object which returns content from the URL. Using try? will stop any       faults if the internet connection is down, or slow.
-                parse(json: data)
-                return
+        DispatchQueue.global(qos: .userInitiated).async {
+            if let url = URL(string: urlString) {
+                if let data = try? Data(contentsOf: url){
+                    //        Contents of creates a new Data object which returns content from the URL. Using try? will stop any       faults if the internet connection is down, or slow.
+                    self.parse(json: data)
+                    return
+                }
             }
+            self.showError()
         }
-        showError()
+        
     }
     
     
@@ -55,9 +58,11 @@ class ViewController: UITableViewController {
     }
     
     func showError() {
-        let ac = UIAlertController(title: "Loading Error", message: "Feed couldn't be loaded,Please try again.", preferredStyle: .alert)
-        ac.addAction(UIAlertAction(title: "Ok", style: .default))
-        present(ac, animated: true)
+        DispatchQueue.main.async {
+            let ac = UIAlertController(title: "Loading Error", message: "Feed couldn't be loaded,Please try again.", preferredStyle: .alert)
+            ac.addAction(UIAlertAction(title: "Ok", style: .default))
+            self.present(ac, animated: true)
+        }
     }
     
     func parse(json: Data){
@@ -65,7 +70,11 @@ class ViewController: UITableViewController {
         
         if let jsonPetitions = try? decoder.decode(Petitions.self, from: json){
             petitions = jsonPetitions.results
-            tableView.reloadData()
+            DispatchQueue.main.async {
+                self.tableView.reloadData()
+            }
+            //            tableView.reloadData()
+            
             //  Creates an instance of JSONDecoder  which is dedicated to converting between JSON and and codable objects
             //
             //  It then calls the decode() method on that decoder, asking it to convert our json data into a Petitions object. This is a throwing call, so we use try? to check whether it worked.
